@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste de Imagem</title>
+  <style>
+    body {
+      text-align: center;
+      padding-top: 50px;
+      margin: 0;
+      background-color: white;
+      font-family: Arial, sans-serif;
+    }
+    #imagem {
+      max-width: 90%;
+      height: auto;
+      display: block;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+<body>
+  <h2>Observe a imagem com atenção. Você tem 1 minuto.</h2>
+  <img id="imagem" src="https://i.imgur.com/jhpFN48.jpg" alt="Imagem">
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const imagem = document.getElementById('imagem');
+      const tempoEspera = 60000; // 1 minuto
+
+      if (localStorage.getItem('tempoPassado') === 'true') {
+        document.body.style.backgroundColor = 'white';
+        document.body.innerHTML = '<h1 style="text-align: center; padding-top: 50px;">A imagem não está mais disponível.</h1>';
+        
+        setTimeout(() => {
+          localStorage.removeItem('tempoPassado');
+          window.location.reload();
+        }, tempoEspera);
+
+      } else {
+        imagem.style.display = 'block';
+
+        setTimeout(() => {
+          imagem.style.display = 'none';
+          document.body.style.backgroundColor = 'white';
+          document.body.innerHTML = '<h1 style="text-align: center; padding-top: 50px;">A imagem não está mais disponível.</h1>';
+
+          localStorage.setItem('tempoPassado', 'true');
+
+          setTimeout(() => {
+            localStorage.removeItem('tempoPassado');
+            window.location.reload();
+          }, tempoEspera);
+
+        }, tempoEspera);
+      }
+    });
+  </script>
+</body>
+</html>
