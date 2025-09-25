@@ -94,9 +94,12 @@
       };
       imageContainer.appendChild(img);
 
+      const inicio = Date.now();
+      sessionStorage.setItem('inicioVisualizacao', inicio);
+
       setTimeout(() => {
         imageContainer.innerHTML = '';
-        message.textContent = 'A imagem não está mais disponível.';
+        message.textContent = 'A imagem não está mais disponível. Retorne para o teste.';
         sessionStorage.setItem('imagemVista', 'true');
       }, TEMPO_LIMITE);
     }
@@ -105,16 +108,32 @@
       startBtn.style.display = 'none';
       introText.remove();
       imageContainer.innerHTML = '';
-      message.textContent = 'A imagem não está mais disponível.';
+      message.textContent = 'A imagem não está mais disponível. Retorne para o teste.';
     }
 
-    if (sessionStorage.getItem('imagemVista')) {
-      mostrarFinal();
-    } else {
-      startBtn.addEventListener('click', () => {
-        mostrarImagem();
-      });
+    function verificarEstado() {
+      const inicio = sessionStorage.getItem('inicioVisualizacao');
+      const imagemVista = sessionStorage.getItem('imagemVista');
+
+      if (imagemVista) {
+        mostrarFinal();
+      } else if (inicio) {
+        const tempoPassado = Date.now() - parseInt(inicio);
+        if (tempoPassado < TEMPO_LIMITE) {
+          // Se recarregou durante o tempo → bloqueia
+          sessionStorage.setItem('imagemVista', 'true');
+          mostrarFinal();
+        } else {
+          mostrarFinal();
+        }
+      }
     }
+
+    verificarEstado();
+
+    startBtn.addEventListener('click', () => {
+      mostrarImagem();
+    });
   </script>
 </body>
 </html>
