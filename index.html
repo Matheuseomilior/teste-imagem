@@ -20,7 +20,7 @@
     }
 
     h1 {
-      font-size: clamp(20px, 3vw, 32px); /* ajusta conforme tela */
+      font-size: clamp(20px, 3vw, 32px);
       color: #333;
       margin-bottom: 30px;
       font-weight: 500;
@@ -62,69 +62,4 @@
       object-fit: contain;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      max-width: 100%;
-      height: auto;
-    }
-
-    /* 📱 Modo celular */
-    @media (max-width: 768px) {
-      img {
-        width: 100%;
-        height: auto;
-      }
-    }
-
-    /* 💻 Modo desktop */
-    @media (min-width: 769px) {
-      img {
-        max-width: 70vw; /* cabe inteiro na tela */
-        max-height: 80vh;
-      }
-    }
-
-    #message {
-      font-size: 22px;
-      margin-top: 30px;
-      color: #333;
-      text-align: center;
-      font-family: 'Poppins', Arial, sans-serif;
-      font-weight: 400;
-      max-width: 90%;
-    }
-  </style>
-</head>
-<body>
-  <h1 id="intro-text">Você terá 1 minuto para observar a imagem.</h1>
-  <button id="start-btn">Iniciar</button>
-
-  <div id="image-container"></div>
-  <div id="message"></div>
-
-  <script>
-    const startBtn = document.getElementById('start-btn');
-    const imageContainer = document.getElementById('image-container');
-    const message = document.getElementById('message');
-    const introText = document.getElementById('intro-text');
-    const TEMPO_LIMITE = 60000; // 1 minuto
-
-    function mostrarImagem() {
-      startBtn.style.display = 'none';
-      introText.remove();
-      message.textContent = '';
-      imageContainer.innerHTML = '';
-
-      const img = document.createElement('img');
-      img.src = 'https://i.imgur.com/61RMiPT.png';
-      img.alt = 'Imagem de observação';
-      img.onerror = () => {
-        message.textContent = 'Falha ao carregar a imagem.';
-      };
-      imageContainer.appendChild(img);
-
-      const inicio = Date.now();
-      sessionStorage.setItem('inicioVisualizacao', inicio);
-
-      setTimeout(() => {
-        imageContainer.innerHTML = '';
-        message.textContent = 'A imagem não está mais disponível. Retorne para o teste.';
-        sessionStorage.s
+      max-width: 100
