@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Teste de Observação</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
   <style>
     body {
       font-family: 'Poppins', Arial, sans-serif;
@@ -18,14 +17,15 @@
       justify-content: center;
       text-align: center;
       padding: 20px;
-      overflow: hidden;
     }
 
     h1 {
-      font-size: 28px;
+      font-size: clamp(20px, 3vw, 32px); /* ajusta conforme tela */
       color: #333;
       margin-bottom: 30px;
-      font-weight: 400;
+      font-weight: 500;
+      line-height: 1.4;
+      max-width: 90%;
     }
 
     #start-btn {
@@ -44,11 +44,13 @@
       background-color: #0056b3;
     }
 
-    /* Container que permite zoom e rolagem */
     #image-container {
-      margin-top: 20px;
+      margin-top: 25px;
       width: 100%;
-      max-width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       touch-action: pinch-zoom;
@@ -60,9 +62,11 @@
       object-fit: contain;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      max-width: 100%;
+      height: auto;
     }
 
-    /* 📱 Modo celular: imagem ocupa a tela toda e permite zoom */
+    /* 📱 Modo celular */
     @media (max-width: 768px) {
       img {
         width: 100%;
@@ -70,4 +74,57 @@
       }
     }
 
-    /* 💻 Modo desktop: mantém tamanho original, sem amp*
+    /* 💻 Modo desktop */
+    @media (min-width: 769px) {
+      img {
+        max-width: 70vw; /* cabe inteiro na tela */
+        max-height: 80vh;
+      }
+    }
+
+    #message {
+      font-size: 22px;
+      margin-top: 30px;
+      color: #333;
+      text-align: center;
+      font-family: 'Poppins', Arial, sans-serif;
+      font-weight: 400;
+      max-width: 90%;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="intro-text">Você terá 1 minuto para observar a imagem.</h1>
+  <button id="start-btn">Iniciar</button>
+
+  <div id="image-container"></div>
+  <div id="message"></div>
+
+  <script>
+    const startBtn = document.getElementById('start-btn');
+    const imageContainer = document.getElementById('image-container');
+    const message = document.getElementById('message');
+    const introText = document.getElementById('intro-text');
+    const TEMPO_LIMITE = 60000; // 1 minuto
+
+    function mostrarImagem() {
+      startBtn.style.display = 'none';
+      introText.remove();
+      message.textContent = '';
+      imageContainer.innerHTML = '';
+
+      const img = document.createElement('img');
+      img.src = 'https://i.imgur.com/61RMiPT.png';
+      img.alt = 'Imagem de observação';
+      img.onerror = () => {
+        message.textContent = 'Falha ao carregar a imagem.';
+      };
+      imageContainer.appendChild(img);
+
+      const inicio = Date.now();
+      sessionStorage.setItem('inicioVisualizacao', inicio);
+
+      setTimeout(() => {
+        imageContainer.innerHTML = '';
+        message.textContent = 'A imagem não está mais disponível. Retorne para o teste.';
+        sessionStorage.s
