@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
-  <title>Teste de Observação</title>
+  <title>Teste de Observação — Debug Robust</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
+    :root { --bg: #f0f3f8; --card: #fff; --primary: #007bff; --dark: #333; }
+    html,body{height:100%;margin:0;}
     body {
       font-family: 'Poppins', Arial, sans-serif;
       margin: 0;
-      background-color: #f0f0f0;
+      background-color: var(--bg);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -19,47 +21,272 @@
       padding: 20px;
     }
 
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+      width: 100%;
+      max-width: 900px;
+    }
+
     h1 {
-      font-size: clamp(20px, 3vw, 32px);
-      color: #333;
-      margin-bottom: 30px;
-      font-weight: 500;
-      line-height: 1.4;
-      max-width: 90%;
+      font-size: clamp(18px, 2.6vw, 28px);
+      color: var(--dark);
+      margin: 0 0 12px 0;
+      font-weight: 600;
+    }
+
+    p.lead {
+      margin: 0 0 18px 0;
+      color: #555;
+      font-size: 15px;
     }
 
     #start-btn {
-      padding: 15px 30px;
-      font-size: 18px;
+      padding: 12px 22px;
+      font-size: 16px;
       cursor: pointer;
-      background-color: #007bff;
+      background-color: var(--primary);
       border: none;
       color: white;
       border-radius: 8px;
-      transition: background-color 0.3s ease;
-      font-family: 'Poppins', Arial, sans-serif;
+      transition: background-color .18s ease;
+      -webkit-tap-highlight-color: transparent;
     }
+    #start-btn[disabled]{opacity:.6;cursor:not-allowed}
 
-    #start-btn:hover {
-      background-color: #0056b3;
-    }
-
-    #image-container {
-      margin-top: 25px;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
+    #image-wrapper{
+      margin-top:18px;
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
       touch-action: pinch-zoom;
+      padding:8px;
+      box-sizing:border-box;
     }
 
-    img {
-      display: block;
-      margin: 0 auto;
-      object-fit: contain;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      max-width: 100
+    img.observacao {
+      display:block;
+      border-radius:8px;
+      box-shadow:0 8px 28px rgba(0,0,0,.12);
+      object-fit:contain;
+      max-width:100%;
+      height:auto;
+    }
+
+    /* desktop limits */
+    @media (min-width: 769px){
+      img.observacao {
+        max-width: 70vw;
+        max-height: 75vh;
+      }
+    }
+
+    .meta {
+      margin-top:12px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+    .timer {
+      font-weight:600;
+      color:var(--dark);
+    }
+    .message {
+      color:#444;
+      margin-top:12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <h1 id="intro-text">Você terá 1 minuto para observar a imagem.</h1>
+    <p class="lead">Quando clicar em "Iniciar", a imagem ficará visível por 60 segundos. Você pode usar pinch-zoom no celular.</p>
+
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center">
+      <button id="start-btn" type="button">Iniciar</button>
+      <div class="meta">
+        <div class="timer" id="countdown">Pronto</div>
+      </div>
+    </div>
+
+    <div id="image-wrapper" aria-live="polite"></div>
+    <div class="message" id="message" role="status"></div>
+  </div>
+
+  <script>
+    (function () {
+      // --- constantes ---
+      const TEMPO_LIMITE = 60 * 1000; // 60s
+      const IMG_SRC = 'https://i.imgur.com/61RMiPT.png'; // sua imagem
+
+      // --- elementos ---
+      const startBtn = document.getElementById('start-btn');
+      const imageWrapper = document.getElementById('image-wrapper');
+      const messageEl = document.getElementById('message');
+      const introText = document.getElementById('intro-text');
+      const countdownEl = document.getElementById('countdown');
+
+      // estado
+      let timerId = null;
+      let countdownInterval = null;
+
+      // helpers
+      function safeSetSession(key, value) {
+        try { sessionStorage.setItem(key, value); }
+        catch (e) { console.warn('sessionStorage set failed', e); }
+      }
+      function safeGetSession(key) {
+        try { return sessionStorage.getItem(key); } catch (e) { return null; }
+      }
+
+      function atualizarContador(msRestante) {
+        if (msRestante <= 0) {
+          countdownEl.textContent = '00:00';
+          return;
+        }
+        const s = Math.ceil(msRestante / 1000);
+        const mm = String(Math.floor(s / 60)).padStart(2, '0');
+        const ss = String(s % 60).padStart(2, '0');
+        countdownEl.textContent = `${mm}:${ss}`;
+      }
+
+      function iniciarContagemVisual(ms) {
+        const inicio = Date.now();
+        atualizarContador(ms);
+        if (countdownInterval) clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+          const passado = Date.now() - inicio;
+          const restante = ms - passado;
+          if (restante <= 0) {
+            clearInterval(countdownInterval);
+            atualizarContador(0);
+          } else {
+            atualizarContador(restante);
+          }
+        }, 250);
+      }
+
+      function limparVisual() {
+        imageWrapper.innerHTML = '';
+        messageEl.textContent = 'A imagem não está mais disponível. Retorne para o teste.';
+        countdownEl.textContent = 'Fim';
+        startBtn.disabled = false;
+      }
+
+      function mostrarImagem() {
+        console.log('mostrarImagem chamado');
+        // bloqueia o botão para evitar múltiplos cliques
+        startBtn.disabled = true;
+        messageEl.textContent = '';
+        // esconder (sem remover) o texto intro — evita erros em recarregamento
+        if (introText) introText.style.display = 'none';
+
+        // cria imagem
+        const img = document.createElement('img');
+        img.className = 'observacao';
+        img.src = IMG_SRC;
+        img.alt = 'Imagem de observação';
+        img.onload = () => {
+          console.log('imagem carregada');
+          // inicia contadores visuais
+          iniciarContagemVisual(TEMPO_LIMITE);
+        };
+        img.onerror = () => {
+          console.error('Erro ao carregar a imagem');
+          messageEl.textContent = 'Falha ao carregar a imagem.';
+          startBtn.disabled = false;
+        };
+
+        // limpa wrapper e insere
+        imageWrapper.innerHTML = '';
+        imageWrapper.appendChild(img);
+
+        // grava estado (tentar)
+        try { safeSetSession('inicioVisualizacao', Date.now().toString()); } catch (e) { console.warn(e); }
+
+        // timer para remover após TEMPO_LIMITE
+        if (timerId) clearTimeout(timerId);
+        timerId = setTimeout(() => {
+          try { safeSetSession('imagemVista', 'true'); } catch (e) {}
+          limparVisual();
+        }, TEMPO_LIMITE);
+      }
+
+      // Fallback: se por algum motivo o click não for disparado, adicionamos touchstart (apenas para garantir)
+      function bindStartHandlers() {
+        // listener principal
+        startBtn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          console.log('click detectado');
+          mostrarImagem();
+        }, { passive: false });
+
+        // fallback para toque em alguns browsers
+        startBtn.addEventListener('touchstart', (ev) => {
+          // evita duplo disparo: se já desativado, ignora
+          if (startBtn.disabled) return;
+          ev.preventDefault();
+          console.log('touchstart detectado');
+          mostrarImagem();
+        }, { passive: false });
+      }
+
+      // Verifica estado anterior (sessionStorage)
+      function verificarEstadoAnterior() {
+        try {
+          const visto = safeGetSession('imagemVista');
+          const inicio = safeGetSession('inicioVisualizacao');
+          if (visto === 'true') {
+            // já visualizado
+            messageEl.textContent = 'A imagem não está mais disponível. Retorne para o teste.';
+            countdownEl.textContent = 'Fim';
+            startBtn.disabled = true;
+            return;
+          }
+          if (inicio) {
+            const tempoPassado = Date.now() - parseInt(inicio, 10);
+            if (tempoPassado < TEMPO_LIMITE) {
+              // caso o usuário recarregue enquanto ainda tinha tempo — bloqueamos e colocamos mensagem final
+              safeSetSession('imagemVista', 'true');
+              messageEl.textContent = 'A imagem não está mais disponível. Retorne para o teste.';
+              countdownEl.textContent = 'Fim';
+              startBtn.disabled = true;
+              return;
+            } else {
+              // tempo já expirou
+              safeSetSession('imagemVista', 'true');
+              messageEl.textContent = 'A imagem não está mais disponível. Retorne para o teste.';
+              countdownEl.textContent = 'Fim';
+              startBtn.disabled = true;
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Erro ao verificar estado anterior', e);
+        }
+      }
+
+      // inicializa
+      document.addEventListener('DOMContentLoaded', function () {
+        try {
+          bindStartHandlers();
+          verificarEstadoAnterior();
+          console.log('script inicializado - pronto');
+        } catch (err) {
+          console.error('Erro durante inicialização:', err);
+          // fallback visual
+          alert('Erro interno: ver console para detalhes.');
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>
