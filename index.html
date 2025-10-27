@@ -2,20 +2,23 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" /> <!-- 👈 permite zoom -->
   <title>Teste de Observação</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
     body {
       font-family: 'Poppins', Arial, sans-serif;
       margin: 0;
       background-color: #f0f0f0;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
       padding: 20px;
+      overflow: hidden;
     }
 
     h1 {
@@ -41,17 +44,22 @@
       background-color: #0056b3;
     }
 
+    /* 👇 Container que permite zoom e rolagem */
     #image-container {
-      margin-top: 30px;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 100%;
+      overflow: auto; /* 👈 permite rolar se for maior que a tela */
+      -webkit-overflow-scrolling: touch;
+      touch-action: pinch-zoom; /* 👈 permite pinch zoom */
     }
 
     img {
-      height: 100vh;
-      width: auto;
-      max-width: 100%;
+      width: 100%;
+      height: auto;
       display: block;
       margin: 0 auto;
-      object-fit: cover;
+      object-fit: contain; /* 👈 garante que a imagem caiba inteira */
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
@@ -120,7 +128,6 @@
       } else if (inicio) {
         const tempoPassado = Date.now() - parseInt(inicio);
         if (tempoPassado < TEMPO_LIMITE) {
-          // Se recarregou durante o tempo → bloqueia
           sessionStorage.setItem('imagemVista', 'true');
           mostrarFinal();
         } else {
